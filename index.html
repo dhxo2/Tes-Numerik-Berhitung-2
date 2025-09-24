@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Latihan Soal Interaktif</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .quiz-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: none;
+        }
+        .btn-primary {
+            background-color: #8b5cf6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #7c3aed;
+        }
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+        .btn-secondary.active {
+            background-color: #8b5cf6;
+            color: white;
+            box-shadow: 0 0 0 2px #a78bfa;
+        }
+        .option-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            color: #1f2937;
+            margin-bottom: 0.75rem;
+            padding: 0.75rem 1.5rem;
+        }
+        .option-btn:hover {
+            background-color: #f3f4f6;
+        }
+        .option-btn.correct {
+            background-color: #dcfce7;
+            border-color: #4ade80;
+            color: #166534;
+            font-weight: bold;
+        }
+        .option-btn.incorrect {
+            background-color: #fee2e2;
+            border-color: #f87171;
+            color: #991b1b;
+            font-weight: bold;
+        }
+        .option-btn:disabled {
+            cursor: not-allowed;
+        }
+        .option-btn.selected {
+            background-color: #ede9fe;
+            border-color: #8b5cf6;
+            color: #5b21b6;
+            font-weight: 600;
+        }
+        .review-question-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        /* Styling for fractions */
+        .frac {
+            display: inline-flex;
+            flex-direction: column;
+            text-align: center;
+            vertical-align: middle;
+            margin: 0 0.2em;
+            line-height: 1.2;
+        }
+        .frac > span:first-of-type {
+            display: block;
+            border-bottom: 1.5px solid currentColor;
+            padding: 0 0.2em;
+        }
+        .frac > span:last-of-type {
+            display: block;
+            padding: 0 0.2em;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <div id="password-screen" class="quiz-container text-center">
+        <h1 class="text-4xl font-bold text-purple-700 mb-4">Akses Latihan Soal</h1>
+        <p class="text-lg text-gray-600 mb-8">Silakan masukkan password untuk melanjutkan.</p>
+        <div class="max-w-xs mx-auto">
+            <input type="password" id="password-input" class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Masukkan password...">
+            <button id="password-submit-btn" class="btn btn-primary w-full text-lg">Masuk</button>
+            <p id="password-error" class="text-red-500 text-sm mt-4 min-h-[20px]"></p>
+        </div>
+    </div>
+
+    <div id="start-screen" class="quiz-container text-center hidden">
+        <h1 class="text-4xl font-bold text-purple-700 mb-4">Selamat Datang di Latihan Soal</h1>
+        <p class="text-lg text-gray-600 mb-6">Uji pengetahuan Anda dengan 50 soal dalam 25 menit.</p>
+        <div class="bg-purple-50 p-6 rounded-lg border border-purple-200 mb-8">
+            <h2 class="text-2xl font-semibold text-purple-800 mb-3">Petunjuk Pengerjaan</h2>
+            <ul class="text-left space-y-2 text-gray-700 list-disc list-inside">
+                <li>Total waktu pengerjaan adalah <strong>25 menit</strong>.</li>
+                <li>Pilih satu jawaban yang paling tepat untuk setiap soal.</li>
+                <li>Anda dapat memilih urutan soal (acak atau tidak acak) sebelum memulai.</li>
+                <li>Skor akhir akan ditampilkan setelah semua soal terjawab atau waktu habis.</li>
+                <li>Klik tombol <strong>"Mulai"</strong> untuk memulai latihan.</li>
+            </ul>
+        </div>
+        
+        <div class="mb-8">
+            <p class="font-semibold mb-3 text-lg">Pilih Urutan Soal:</p>
+            <div class="flex justify-center gap-4">
+                <button id="sequential-btn" class="btn btn-secondary active w-40">Tidak Acak</button>
+                <button id="random-btn" class="btn btn-secondary w-40">Acak</button>
+            </div>
+        </div>
+
+        <button id="start-btn" class="btn btn-primary w-full text-xl">Mulai Latihan</button>
+    </div>
+
+    <div id="quiz-screen" class="quiz-container hidden">
+        <div class="flex justify-between items-center mb-6">
+            <div id="question-counter" class="text-lg font-semibold text-purple-700"></div>
+            <div class="flex items-center gap-4">
+                <div id="timer" class="text-xl font-bold bg-purple-600 text-white px-4 py-2 rounded-lg">25:00</div>
+                <button id="finish-btn" class="btn btn-primary">Selesai</button>
+            </div>
+        </div>
+        <div id="question-container" class="text-xl font-medium mb-6 min-h-[60px]"></div>
+        <div id="options-container"></div>
+        <div class="flex justify-between mt-6">
+            <button id="prev-btn" class="btn btn-secondary w-48">Soal Sebelumnya</button>
+            <button id="next-btn" class="btn btn-primary w-48">Soal Berikutnya</button>
+        </div>
+    </div>
+
+    <div id="result-screen" class="quiz-container text-center hidden">
+        <h2 class="text-3xl font-bold text-purple-700 mb-4">Latihan Selesai!</h2>
+        <p class="text-lg mb-6">Berikut adalah hasil Anda:</p>
+        <div class="bg-purple-100 p-8 rounded-lg mb-8">
+            <p class="text-xl text-gray-700">Nilai Akhir</p>
+            <p id="score-text" class="text-6xl font-bold text-purple-800 my-2">0 / 100</p>
+            <p id="percentage-text" class="text-2xl text-purple-600 font-semibold"></p>
+        </div>
+        <div class="flex gap-4">
+            <button id="review-btn" class="btn btn-secondary w-full text-lg">Lihat Pembahasan</button>
+            <button id="restart-btn" class="btn btn-primary w-full text-lg">Coba Lagi</button>
+        </div>
+    </div>
+    
+    <div id="review-screen" class="quiz-container hidden">
+         <div class="flex justify-between items-center mb-6">
+            <h2 class="text-3xl font-bold text-purple-700">Pembahasan Jawaban</h2>
+            <button id="back-to-result-btn" class="btn btn-secondary">Kembali</button>
+        </div>
+        <div id="review-container"></div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-8 rounded-lg shadow-xl text-center max-w-sm mx-4">
+            <h3 class="text-xl font-bold mb-4 text-gray-800">Selesaikan Latihan?</h3>
+            <p class="text-gray-600 mb-6">Apakah Anda yakin ingin menyelesaikan latihan ini? Jawaban tidak dapat diubah setelahnya.</p>
+            <div class="flex justify-center gap-4">
+                <button id="cancel-finish-btn" class="btn btn-secondary w-32">Batal</button>
+                <button id="confirm-finish-btn" class="btn btn-primary w-32 bg-red-600 hover:bg-red-700">Ya, Selesai</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { question: "68 : 4 × 17 = ….", options: ["179", "224", "242", "289", "37"], answer: "D" },
+            { question: "18² × 12² = ….", options: ["24.886", "34.676", "46.656", "48.344", "52.576"], answer: "C" },
+            { question: "√196 + 0,13 + 2,4 = ….", options: ["14,53", "15,43", "16,17", "16,53", "17,37"], answer: "D" },
+            { question: 'sin x = <span class="frac"><span>1</span><span>2</span></span>√2. Nilai x yang tepat adalah ….', options: ['<span class="frac"><span>π</span><span>2</span></span>', '<span class="frac"><span>3π</span><span>2</span></span>', '<span class="frac"><span>π</span><span>3</span></span>', '<span class="frac"><span>2π</span><span>3</span></span>', '<span class="frac"><span>π</span><span>4</span></span>'], answer: "E" },
+            { question: "Jika log 10 = 1, maka log 10⁵ = ….", options: ["1", "2", "3", "4", "5"], answer: "E" },
+            { question: "(√484 + 3)² = ….", options: ["487", "495", "545", "585", "625"], answer: "E" },
+            { question: '(<span class="frac"><span>2</span><span>3</span></span>)² : 4 + <span class="frac"><span>2</span><span>9</span></span> = ….', options: ['<span class="frac"><span>2</span><span>9</span></span>', '<span class="frac"><span>4</span><span>9</span></span>', '<span class="frac"><span>7</span><span>9</span></span>', '<span class="frac"><span>2</span><span>3</span></span>', '<span class="frac"><span>1</span><span>3</span></span>'], answer: "E" },
+            { question: "8 × 2³ × 16 = ….", options: ["2²", "2⁴", "2⁶", "2⁸", "2¹⁰"], answer: "E" },
+            { question: "Jika ln 2 = 0,693, ln 8 = 2,079, maka ln 4 = ….", options: ["0,906", "1,098", "1,386", "1,609", "3,000"], answer: "C" },
+            { question: 'y = <span class="frac"><span>π</span><span>6</span></span>. Nilai sin y = ….', options: ['<span class="frac"><span>1</span><span>4</span></span>√2', '<span class="frac"><span>1</span><span>3</span></span>√2', '<span class="frac"><span>1</span><span>2</span></span>√3', '<span class="frac"><span>1</span><span>2</span></span>', '<span class="frac"><span>3</span><span>4</span></span>'], answer: "D" },
+            { question: '<span class="frac"><span>100</span><span>37</span></span> = ….', options: ["2,027", "2,207", "2,270", "2,703", "2,720"], answer: "D" },
+            { question: "(180 + 45)² = ….", options: ["50.625", "44.865", "40.480", "36.985", "34.465"], answer: "A" },
+            { question: "4³ × 2² – 31 = ….", options: ["144", "196", "225", "235", "246"], answer: "C" },
+            { question: '(<span class="frac"><span>4</span><span>5</span></span>) × 80 = a³. Nilai a yang tepat adalah ….', options: ["2", "4", "5", "6", "7"], answer: "B" },
+            { question: '(<span class="frac"><span>1</span><span>2</span></span> × <span class="frac"><span>1</span><span>2</span></span>) : (<span class="frac"><span>1</span><span>2</span></span> – <span class="frac"><span>1</span><span>4</span></span>) = ….', options: ["1", "2", "3", "4", "5"], answer: "A" },
+            { question: "(√196 + √144) = ….", options: ["26", "75", "125", "425", "676"], answer: "A" },
+            { question: 'Jika p = 4 dan q = 3, maka <span class="frac"><span>p² + 4p – 4</span><span>2p + q</span></span> = ….', options: ['2 <span class="frac"><span>2</span><span>11</span></span>', '2 <span class="frac"><span>4</span><span>11</span></span>', '2 <span class="frac"><span>6</span><span>11</span></span>', '2 <span class="frac"><span>8</span><span>11</span></span>', '2 <span class="frac"><span>9</span><span>11</span></span>'], answer: "C" },
+            { question: '<span class="frac"><span>4 + √(a + 12)</span><span>4</span></span> = 2,5. Nilai a yang memenuhi adalah ….', options: ["12", "14", "18", "24", "36"], answer: "D" },
+            { question: "4% dari 72 adalah ….", options: ["0,0288", "0,288", "2,88", "28,8", "288"], answer: "C" },
+            { question: "45 adalah 20% dari ….", options: ["95", "145", "225", "245", "285"], answer: "C" },
+            { question: '(<span class="frac"><span>6</span><span>8</span></span>) × 100% = ….', options: ["20", "45", "60", "75", "85"], answer: "D" },
+            { question: '1 <span class="frac"><span>1</span><span>3</span></span> × b = <span class="frac"><span>8</span><span>21</span></span>. Nilai b = ….', options: ['<span class="frac"><span>2</span><span>7</span></span>', '<span class="frac"><span>3</span><span>7</span></span>', '1 <span class="frac"><span>1</span><span>7</span></span>', '<span class="frac"><span>5</span><span>6</span></span>', '<span class="frac"><span>18</span><span>21</span></span>'], answer: "A" },
+            { question: "(8,4 + 12) × 2 – (2,8 : 4) = ….", options: ["20,4", "20,8", "40,1", "40,3", "40,5"], answer: "C" },
+            { question: "√(4 – 1,11) + √(1 – 0,36) = ….", options: ["2,89", "2,50", "1,96", "1,69", "1,44"], answer: "B" },
+            { question: '<span class="frac"><span>4</span><span>11</span></span> × 2,5 : <span class="frac"><span>1</span><span>4</span></span> = ….', options: ['2<span class="frac"><span>1</span><span>4</span></span>', '2<span class="frac"><span>3</span><span>4</span></span>', '3 <span class="frac"><span>8</span><span>11</span></span>', '3 <span class="frac"><span>1</span><span>11</span></span>', '3 <span class="frac"><span>7</span><span>11</span></span>'], answer: "E" },
+            { question: "(x + 4)(x – 2) = 0. Nilai x = ….", options: ["-4 dan -2", "-4 dan 2", "4 dan 2", "4 dan -2", "0"], answer: "B" },
+            { question: "∛0,027 = ….", options: ["0,27", "0,18", "0,09", "0,03", "0,30"], answer: "E" },
+            { question: "0,2² × 1,7 = ….", options: ["0,680", "0,068", "0,0068", "0,0064", "0,0058"], answer: "B" },
+            { question: 'Jika θ = <span class="frac"><span>π</span><span>3</span></span>, maka sin²θ + cos²θ = ….', options: ["1", '<span class="frac"><span>4</span><span>5</span></span>√2', '<span class="frac"><span>1</span><span>3</span></span>√3', '<span class="frac"><span>1</span><span>4</span></span>√2', "0"], answer: "A" },
+            { question: "(2x + y)(y – 2x) = ….", options: ["x² – 2y", "2x² + 2y", "2x² – y²", "-4x² + y²", "-4x² – y²"], answer: "D" },
+            { question: '|–<span class="frac"><span>2</span><span>3</span></span>| × 0,07 = ….', options: ["0,047", "0,47", "0", "–0,047", "0,07"], answer: "A" },
+            { question: '<span class="frac"><span>2 + √2</span><span>2 – √2</span></span> = ….', options: ["3 – 2√2", "3 + 2√2", '<span class="frac"><span>3 + √2</span><span>2</span></span>', '<span class="frac"><span>1 + √2</span><span>√2</span></span>', '<span class="frac"><span>2</span><span>2 – √2</span></span>'], answer: "B" },
+            { question: "0,032 – 0,00032 = ….", options: ["0,031", "0,0312", "0,0362", "0,03168", "0,03186"], answer: "D" },
+            { question: "40% dari Rp7.500,00 adalah ….", options: ["Rp2.700,00", "Rp3.000,00", "Rp3.200,00", "Rp3.750,00", "Rp3.850,00"], answer: "B" },
+            { question: "Jika diketahui 2x² + 4x + 12 = y, untuk x = 2, maka y = ….", options: ["11", "14", "18", "24", "28"], answer: "E" },
+            { question: "√5,76 + 4,12 = ….", options: ["18,23", "16,09", "13,77", "9,93", "6,52"], answer: "E" },
+            { question: 'Jika f = <span class="frac"><span>1</span><span>T</span></span>, maka nilai f untuk T = 12 adalah ….', options: ["0,01", "0,08", "0,12", "1,07", "1,81"], answer: "B" },
+            { question: "4 hari 2 jam = …. menit", options: ["5.880", "6.240", "6.860", "7.340", "7.890"], answer: "A" },
+            { question: "√6,25 × 2,08 = ….", options: ["4,2", "4,6", "5,2", "5,4", "5,6"], answer: "C" },
+            { question: "74,88 : 15,6 = ….", options: ["2,6", "2,8", "3,6", "4,6", "4,8"], answer: "E" },
+            { question: 'Jika y = 2x³ + 6x, maka <span class="frac"><span>d²y</span><span>dx²</span></span> = ….', options: ["2x²", "6x²", "4x", "6x", "12x"], answer: "E" },
+            { question: '<span class="frac"><span>a⁴ + 12a⁸ – a²</span><span>a²</span></span> = ….', options: ["a² + 12a⁶", "a² – 12a⁶ + 1", "a² + 12a⁶ – a", "a² + 12a⁶ + a²", "a² + 12a⁶ – 1"], answer: "E" },
+            { question: '√( <span class="frac"><span>1</span><span>64</span></span> - <span class="frac"><span>1</span><span>100</span></span> ) = ….', options: ["0,20", "0,25", "0,75", "0,075", "0,095"], answer: "D" },
+            { question: 'Jika y = 2x + 3, maka nilai y⁻¹ = ….', options: ["2x⁻¹ + 3", "–2x + 3", "–2x – 3", '<span class="frac"><span>1</span><span>2x + 3</span></span>', "(2x – 3)"], answer: "D" },
+            { question: "log 10⁷ = ….", options: ["1", "2", "3", "4", "7"], answer: "E" },
+            { question: 'Jika a = b = 2, maka (<span class="frac"><span>a² - b</span><span>2b</span></span>)(<span class="frac"><span>ab</span><span>2a</span></span>) = ….', options: ['<span class="frac"><span>1</span><span>2</span></span>', '<span class="frac"><span>1</span><span>4</span></span>', '<span class="frac"><span>3</span><span>4</span></span>', '<span class="frac"><span>1</span><span>12</span></span>', '<span class="frac"><span>4</span><span>6</span></span>'], answer: "A" },
+            { question: "2 dekade + 1 lustrum = …. bulan", options: ["300", "286", "280", "186", "140"], answer: "A" },
+            { question: "√2,56 + √6,25 = ….", options: ["3,2", "3,5", "4,1", "4,7", "5,1"], answer: "C" },
+            { question: "(47 + 49) × 35% = ….", options: ["27,2", "29,4", "30,1", "32,7", "33,6"], answer: "E" },
+            { question: "4,056 : 2,4 = ….", options: ["1,69", "1,96", "1,36", "1,29", "1,09"], answer: "A" },
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let timer;
+        let userAnswers = new Array(questions.length).fill(null);
+        let shuffledQuestions = [];
+        let isRandom = false;
+        let timeInSeconds = 25 * 60; // 25 minutes
+
+        const passwordScreen = document.getElementById('password-screen');
+        const passwordInput = document.getElementById('password-input');
+        const passwordSubmitBtn = document.getElementById('password-submit-btn');
+        const passwordError = document.getElementById('password-error');
+
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const reviewScreen = document.getElementById('review-screen');
+
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const reviewBtn = document.getElementById('review-btn');
+        const backToResultBtn = document.getElementById('back-to-result-btn');
+
+        const questionCounter = document.getElementById('question-counter');
+        const questionContainer = document.getElementById('question-container');
+        const optionsContainer = document.getElementById('options-container');
+        const nextBtn = document.getElementById('next-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const finishBtn = document.getElementById('finish-btn');
+        
+        const sequentialBtn = document.getElementById('sequential-btn');
+        const randomBtn = document.getElementById('random-btn');
+
+        const scoreText = document.getElementById('score-text');
+        const percentageText = document.getElementById('percentage-text');
+        const reviewContainer = document.getElementById('review-container');
+
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const confirmFinishBtn = document.getElementById('confirm-finish-btn');
+        const cancelFinishBtn = document.getElementById('cancel-finish-btn');
+
+        passwordSubmitBtn.addEventListener('click', () => {
+            const enteredPassword = passwordInput.value;
+            if (enteredPassword === 'dhikasatya' || enteredPassword === 'DSPXO2') {
+                passwordScreen.classList.add('hidden');
+                startScreen.classList.remove('hidden');
+            } else {
+                passwordError.textContent = 'Password salah. Silakan coba lagi.';
+            }
+        });
+
+        passwordInput.addEventListener('keypress', function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                passwordSubmitBtn.click();
+            }
+        });
+
+        sequentialBtn.addEventListener('click', () => {
+            isRandom = false;
+            sequentialBtn.classList.add('active');
+            randomBtn.classList.remove('active');
+        });
+
+        randomBtn.addEventListener('click', () => {
+            isRandom = true;
+            randomBtn.classList.add('active');
+            sequentialBtn.classList.remove('active');
+        });
+
+        function startQuiz() {
+            startScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            currentQuestionIndex = 0;
+            score = 0;
+            userAnswers.fill(null);
+
+            if (isRandom) {
+                shuffledQuestions = [...questions].sort(() => Math.random() - 0.5);
+            } else {
+                shuffledQuestions = [...questions];
+            }
+            
+            showQuestion();
+            startTimer();
+        }
+
+        function startTimer() {
+            const timerEl = document.getElementById('timer');
+            timer = setInterval(() => {
+                timeInSeconds--;
+                const minutes = Math.floor(timeInSeconds / 60);
+                const seconds = timeInSeconds % 60;
+                timerEl.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                if (timeInSeconds <= 0) {
+                    clearInterval(timer);
+                    showResult(true); // true indicates time is up
+                }
+            }, 1000);
+        }
+
+        function showQuestion() {
+            const question = shuffledQuestions[currentQuestionIndex];
+            questionContainer.innerHTML = question.question;
+            questionCounter.textContent = `Soal ${currentQuestionIndex + 1} dari ${questions.length}`;
+            optionsContainer.innerHTML = '';
+            question.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.innerHTML = option;
+                button.classList.add('btn', 'option-btn');
+                const optionLetter = String.fromCharCode(65 + index);
+                button.dataset.option = optionLetter;
+                button.addEventListener('click', () => selectAnswer(optionLetter));
+                
+                if (userAnswers[currentQuestionIndex] === optionLetter) {
+                    button.classList.add('selected');
+                }
+
+                optionsContainer.appendChild(button);
+            });
+
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.textContent = currentQuestionIndex === questions.length - 1 ? 'Selesai' : 'Soal Berikutnya';
+        }
+
+        function selectAnswer(selectedOption) {
+            userAnswers[currentQuestionIndex] = selectedOption;
+            const buttons = optionsContainer.querySelectorAll('.option-btn');
+            buttons.forEach(btn => {
+                if (btn.dataset.option === selectedOption) {
+                    btn.classList.add('selected');
+                } else {
+                    btn.classList.remove('selected');
+                }
+            });
+        }
+        
+        function nextQuestion() {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                showQuestion();
+            } else {
+                showConfirmation();
+            }
+        }
+        
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                showQuestion();
+            }
+        }
+
+        function showConfirmation() {
+            confirmationModal.classList.remove('hidden');
+        }
+
+        function hideConfirmation() {
+            confirmationModal.classList.add('hidden');
+        }
+
+        function showResult(isTimeUp = false) {
+            clearInterval(timer);
+            hideConfirmation();
+            let correctAnswers = 0;
+            shuffledQuestions.forEach((q, index) => {
+                if (userAnswers[index] === q.answer) {
+                    correctAnswers++;
+                }
+            });
+            score = correctAnswers * 2;
+            const percentage = (score / (questions.length * 2) * 100).toFixed(0);
+            
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            
+            if (isTimeUp) {
+                const title = resultScreen.querySelector('h2');
+                title.textContent = "Waktu Habis!";
+            }
+
+            scoreText.textContent = `${score} / 100`;
+            percentageText.textContent = `Anda menjawab benar ${correctAnswers} dari ${questions.length} soal.`;
+        }
+
+        function showReview() {
+            resultScreen.classList.add('hidden');
+            reviewScreen.classList.remove('hidden');
+            reviewContainer.innerHTML = '';
+
+            shuffledQuestions.forEach((q, index) => {
+                const userAnswer = userAnswers[index];
+                const isCorrect = userAnswer === q.answer;
+
+                let optionsHtml = '';
+                q.options.forEach((option, optionIndex) => {
+                    const optionLetter = String.fromCharCode(65 + optionIndex);
+                    let optionClass = 'option-btn';
+                    
+                    if(optionLetter === q.answer){
+                        optionClass += ' correct';
+                    } else if (optionLetter === userAnswer && !isCorrect) {
+                        optionClass += ' incorrect';
+                    }
+
+                    optionsHtml += `<button class="${optionClass}" disabled>${option}</button>`;
+                });
+                
+                const reviewItem = `
+                    <div class="review-question-item">
+                        <p class="text-lg font-semibold mb-4">Soal ${index + 1}:</p>
+                        <div class="text-xl font-medium mb-4">${q.question}</div>
+                        <p class="mb-2 text-sm text-gray-600">Jawaban Anda: <strong>${userAnswer || 'Tidak dijawab'}</strong> (${isCorrect ? '<span class="text-green-600">Benar</span>' : '<span class="text-red-600">Salah</span>'})</p>
+                        <p class="mb-4 text-sm text-gray-600">Jawaban Benar: <strong>${q.answer}</strong></p>
+                        <div class="space-y-3">${optionsHtml}</div>
+                    </div>
+                `;
+                reviewContainer.innerHTML += reviewItem;
+            });
+        }
+
+        startBtn.addEventListener('click', startQuiz);
+        nextBtn.addEventListener('click', nextQuestion);
+        prevBtn.addEventListener('click', prevQuestion);
+        
+        finishBtn.addEventListener('click', showConfirmation);
+        confirmFinishBtn.addEventListener('click', () => showResult(false));
+        cancelFinishBtn.addEventListener('click', hideConfirmation);
+
+        restartBtn.addEventListener('click', () => {
+            resultScreen.classList.add('hidden');
+            passwordScreen.classList.remove('hidden');
+            passwordInput.value = '';
+            passwordError.textContent = '';
+            timeInSeconds = 25 * 60;
+            const timerEl = document.getElementById('timer');
+            timerEl.textContent = "25:00";
+            const title = resultScreen.querySelector('h2');
+            title.textContent = "Latihan Selesai!";
+        });
+        
+        reviewBtn.addEventListener('click', showReview);
+        backToResultBtn.addEventListener('click', () => {
+            reviewScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>
+
+
+
+
