@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Menambahkan pustaka jsPDF untuk membuat PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -40,6 +42,9 @@
         .btn-secondary {
             background-color: #e5e7eb;
             color: #374151;
+        }
+        .btn-secondary:hover {
+            background-color: #d1d5db;
         }
         .btn-secondary.active {
             background-color: #8b5cf6;
@@ -167,9 +172,12 @@
             <p id="score-text" class="text-6xl font-bold text-purple-800 my-2">0 / 100</p>
             <p id="percentage-text" class="text-2xl text-purple-600 font-semibold"></p>
         </div>
-        <div class="flex gap-4">
-            <button id="review-btn" class="btn btn-secondary w-full text-lg">Lihat Pembahasan</button>
-            <button id="restart-btn" class="btn btn-primary w-full text-lg">Coba Lagi</button>
+        <div class="flex flex-col gap-4">
+            <div class="flex gap-4">
+                <button id="review-btn" class="btn btn-secondary w-full text-lg">Lihat Pembahasan</button>
+                <button id="restart-btn" class="btn btn-primary w-full text-lg">Coba Lagi</button>
+            </div>
+            <button id="download-btn" class="btn btn-secondary w-full text-lg">Unduh Soal (PDF)</button>
         </div>
     </div>
     
@@ -269,6 +277,7 @@
         const restartBtn = document.getElementById('restart-btn');
         const reviewBtn = document.getElementById('review-btn');
         const backToResultBtn = document.getElementById('back-to-result-btn');
+        const downloadBtn = document.getElementById('download-btn');
 
         const questionCounter = document.getElementById('question-counter');
         const questionContainer = document.getElementById('question-container');
@@ -467,6 +476,65 @@
                 reviewContainer.innerHTML += reviewItem;
             });
         }
+        
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Helper function to convert HTML to plain text for PDF
+            const stripHtml = (html) => {
+               const tmp = document.createElement("DIV");
+               tmp.innerHTML = html
+                    // Replace fractions with a flatter format e.g., 1 1/3 -> 1 (1/3)
+                    .replace(/(\d+)\s*<span class="frac"><span>(.*?)<\/span><span>(.*?)<\/span><\/span>/g, '$1 ($2/$3)')
+                    // Replace normal fractions
+                    .replace(/<span class="frac"><span>(.*?)<\/span><span>(.*?)<\/span><\/span>/g, '($1/$2)')
+                    // Replace other tags
+                    .replace(/<[^>]+>/g, '');
+               return tmp.textContent || tmp.innerText || "";
+            }
+
+            let y = 15; // Initial Y position
+            const pageHeight = doc.internal.pageSize.height;
+            const margin = 15;
+
+            doc.setFontSize(18);
+            doc.text("Latihan Soal", 105, y, { align: 'center' });
+            y += 15;
+
+            // Use original questions array for consistent order in PDF
+            questions.forEach((q, index) => {
+                // Add new page if content exceeds the current page
+                if (y > pageHeight - (margin * 2)) { 
+                    doc.addPage();
+                    y = margin;
+                }
+
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                const questionText = `${index + 1}. ${stripHtml(q.question)}`;
+                const splitQuestion = doc.splitTextToSize(questionText, 180);
+                doc.text(splitQuestion, margin, y);
+                y += (splitQuestion.length * 5) + 2;
+
+                doc.setFont('helvetica', 'normal');
+                q.options.forEach((option, optionIndex) => {
+                    if (y > pageHeight - margin) {
+                        doc.addPage();
+                        y = margin;
+                    }
+                    const optionLetter = String.fromCharCode(65 + optionIndex);
+                    const optionText = `${optionLetter}. ${stripHtml(option)}`;
+                    const splitOption = doc.splitTextToSize(optionText, 170);
+                    doc.text(splitOption, margin + 5, y);
+                    y += (splitOption.length * 5);
+                });
+                y += 10; // Space between questions
+            });
+
+            doc.save('latihan-soal.pdf');
+        }
+
 
         startBtn.addEventListener('click', startQuiz);
         nextBtn.addEventListener('click', nextQuestion);
@@ -493,10 +561,10 @@
             reviewScreen.classList.add('hidden');
             resultScreen.classList.remove('hidden');
         });
+        
+        downloadBtn.addEventListener('click', downloadPDF);
+
     </script>
 </body>
 </html>
-
-
-
 
